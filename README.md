@@ -25,3 +25,4 @@ The server exposes the VanilliaPXY routes:
 
 Set `window.PLUTONIUM_VANILLIA_SERVER` in `js/vanillia-config.js` to the public origin of this server.
 
+Note: vanillia is in beta, expect bugs and things not working right. 
