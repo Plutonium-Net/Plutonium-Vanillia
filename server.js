@@ -47,6 +47,15 @@ function banner() {
 }
 
 server.on("request", (req, res) => {
+  res.setHeader("access-control-allow-origin", "*");
+  res.setHeader("access-control-allow-methods", "*");
+  res.setHeader("access-control-allow-headers", "*");
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   const path = new URL(req.url, `http://${req.headers.host || "localhost"}`).pathname;
   if (path === "/" || path === "/status") {
     if (req.method !== "GET" && req.method !== "HEAD") {
