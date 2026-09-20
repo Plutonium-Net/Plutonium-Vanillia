@@ -15,6 +15,7 @@ The default port is `8080`. Set `PORT` when the host provides its own port.
 
 The server exposes the VanilliaPXY routes:
 
+- `/` (and `/status`) — plain-text banner: the server is up, plus its routes and uptime
 - `/vanillia?url=...`
 - `/ws?url=...`
 - `/wisp/`
