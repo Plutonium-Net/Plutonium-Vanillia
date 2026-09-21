@@ -3,9 +3,6 @@ import { server } from "vanilliapxy";
 const port = Number(process.env.PORT) || 8080;
 const host = process.env.HOST || "0.0.0.0";
 
-// vanilliapxy builds its own http.Server whose request handler covers every
-// route (including a 404 for "/"). Wrap its listeners so we can answer "/" with
-// a short banner while still delegating everything else to the proxy.
 const upstreamHandlers = server.listeners("request");
 server.removeAllListeners("request");
 
