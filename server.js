@@ -22,7 +22,7 @@ function uptime() {
 
 function banner() {
   return [
-    "Plutonium Vanillia is up and serving.",
+    "VanilliaPXY is up and serving.",
     "",
     "The VanilliaPXY transport backend is online on this host.",
     "",
