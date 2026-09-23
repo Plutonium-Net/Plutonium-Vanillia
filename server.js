@@ -1,4 +1,5 @@
 import { server } from "vanilliapxy";
+console.log('bruehhhhhhhhh')
 // to push a vanillia update comment
 const port = Number(process.env.PORT) || 8080;
 const host = process.env.HOST || "0.0.0.0";
