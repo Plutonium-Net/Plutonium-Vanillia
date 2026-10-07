@@ -1,35 +1,59 @@
 import { relayVanillia } from '../bridge/vanillia-relay.mjs'
 
-export default {
-  async fetch(request) {
-    const url = new URL(request.url)
+export async function GET(request) {
+  return handle(request)
+}
 
-    const server = url.searchParams.get('server') || 'vercel'
-    const target = url.searchParams.get('url')
+export async function POST(request) {
+  return handle(request)
+}
 
-    if (!target) {
-      return new Response('Missing url parameter.', {
-        status: 400,
-        headers: {
-          'content-type': 'text/plain; charset=utf-8',
-          'cache-control': 'no-store'
-        }
-      })
-    }
+export async function HEAD(request) {
+  return handle(request)
+}
 
-    const relayUrl = new URL(
-      `/vanillia-embed/${encodeURIComponent(server)}/vanillia`,
-      url.origin
-    )
+async function handle(request) {
+  const url = new URL(request.url)
+  const target = url.searchParams.get('url')
+  const server = url.searchParams.get('server') || 'vercel'
 
-    relayUrl.searchParams.set('url', target)
-
-    const relayRequest = new Request(relayUrl, {
-      method: request.method,
-      headers: request.headers,
-      body: request.method === 'POST' ? await request.arrayBuffer() : undefined
+  if (!target) {
+    return new Response('Missing url parameter.', {
+      status: 400,
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-store'
+      }
     })
-
-    return relayVanillia(relayRequest)
   }
+
+  if (!['vercel', 'us-west', 'europe'].includes(server)) {
+    return new Response('Unknown Vanillia server.', {
+      status: 400,
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-store'
+      }
+    })
+  }
+
+  const relayUrl = new URL(
+    `/vanillia-embed/${server}/vanillia`,
+    url.origin
+  )
+
+  relayUrl.searchParams.set('url', target)
+
+  const headers = new Headers(request.headers)
+
+  const relayRequest = new Request(relayUrl, {
+    method: request.method,
+    headers,
+    body:
+      request.method === 'POST'
+        ? await request.arrayBuffer()
+        : undefined
+  })
+
+  return relayVanillia(relayRequest)
 }
