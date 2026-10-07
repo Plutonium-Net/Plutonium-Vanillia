@@ -1,6 +1,5 @@
 import { server } from "vanilliapxy";
-console.log('bruehhhhhhhhh');
-// to push a vanillia update comment
+
 const port = Number(process.env.PORT) || 8080;
 const host = process.env.HOST || "0.0.0.0";
 
@@ -14,10 +13,14 @@ function uptime() {
   const hours = Math.floor(total / 3600);
   const minutes = Math.floor((total % 3600) / 60);
   const seconds = total % 60;
+
   const parts = [];
+
   if (hours) parts.push(`${hours}h`);
   if (hours || minutes) parts.push(`${minutes}m`);
+
   parts.push(`${seconds}s`);
+
   return parts.join(" ");
 }
 
@@ -44,17 +47,86 @@ function banner() {
   ].join("\n");
 }
 
+function removeFrameRestrictions(res) {
+  const originalSetHeader = res.setHeader.bind(res);
+  const originalWriteHead = res.writeHead.bind(res);
+
+  res.setHeader = (name, value) => {
+    const lower = String(name).toLowerCase();
+
+    if (
+      lower === "x-frame-options" ||
+      lower === "content-security-policy" ||
+      lower === "content-security-policy-report-only"
+    ) {
+      return res;
+    }
+
+    return originalSetHeader(name, value);
+  };
+
+  res.writeHead = (statusCode, statusMessage, headers) => {
+    let actualStatusMessage = statusMessage;
+    let actualHeaders = headers;
+
+    if (
+      typeof statusMessage === "object" &&
+      statusMessage !== null
+    ) {
+      actualHeaders = statusMessage;
+      actualStatusMessage = undefined;
+    }
+
+    if (actualHeaders) {
+      const filtered = {};
+
+      for (const [name, value] of Object.entries(actualHeaders)) {
+        const lower = name.toLowerCase();
+
+        if (
+          lower === "x-frame-options" ||
+          lower === "content-security-policy" ||
+          lower === "content-security-policy-report-only"
+        ) {
+          continue;
+        }
+
+        filtered[name] = value;
+      }
+
+      actualHeaders = filtered;
+    }
+
+    if (actualStatusMessage === undefined) {
+      return originalWriteHead(statusCode, actualHeaders);
+    }
+
+    return originalWriteHead(
+      statusCode,
+      actualStatusMessage,
+      actualHeaders
+    );
+  };
+}
+
 server.on("request", (req, res) => {
+  removeFrameRestrictions(res);
+
   res.setHeader("access-control-allow-origin", "*");
   res.setHeader("access-control-allow-methods", "*");
   res.setHeader("access-control-allow-headers", "*");
+
   if (req.method === "OPTIONS") {
     res.writeHead(204);
     res.end();
     return;
   }
 
-  const path = new URL(req.url, `http://${req.headers.host || "localhost"}`).pathname;
+  const path = new URL(
+    req.url,
+    `http://${req.headers.host || "localhost"}`
+  ).pathname;
+
   if (path === "/" || path === "/status") {
     if (req.method !== "GET" && req.method !== "HEAD") {
       res.writeHead(405, {
@@ -63,22 +135,36 @@ server.on("request", (req, res) => {
         "cache-control": "no-store",
         "x-robots-tag": "noindex, nofollow, noarchive",
       });
+
       res.end("Method Not Allowed\n");
       return;
     }
+
     const body = banner();
+
     res.writeHead(200, {
       "content-type": "text/plain; charset=utf-8",
       "content-length": Buffer.byteLength(body),
       "cache-control": "no-store",
       "x-robots-tag": "noindex, nofollow, noarchive",
     });
-    res.end(req.method === "HEAD" ? undefined : body);
+
+    res.end(
+      req.method === "HEAD"
+        ? undefined
+        : body
+    );
+
     return;
   }
-  for (const handler of upstreamHandlers) handler.call(server, req, res);
+
+  for (const handler of upstreamHandlers) {
+    handler.call(server, req, res);
+  }
 });
 
 server.listen(port, host, () => {
-  console.log(`VanilliaPXY is listening on ${host}:${port}`);
+  console.log(
+    `VanilliaPXY is listening on ${host}:${port}`
+  );
 });
